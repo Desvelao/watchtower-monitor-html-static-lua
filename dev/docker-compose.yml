@@ -1,0 +1,15 @@
+services:
+  dev:
+    build:
+      context: ..
+      dockerfile: docker/images/dev/Dockerfile
+    image: watchtower-monitor-html-static-lua:dev
+    container_name: watchtower-monitor-html-static-lua-dev
+    volumes:
+      - ../src:/app
+      - ../utils:/utils
+      - ./data:/data
+    environment:
+      - WATCHTOWER_MONITOR_HTML_STATIC_PIPELINE_CONFIG_FILE=/data/config.json
+    # Debug
+    entrypoint: ["tail", "-f", "/dev/null"]

@@ -1,0 +1,11 @@
+services:
+  watchtower-monitor-html-static-lua:
+    image: ghcr.io/desvelao/watchtower-monitor-html-static-lua:0.0.1
+    container_name: watchtower-monitor-html-static-lua
+    user: "1000:1000" # run as non-root user
+    volumes:
+      - ./data/config.json:/watchtower-monitor-html.json
+      - ./data/monitoring.json:/data/monitoring.json # if the process pipeline define the output to file
+    environment:
+      - WATCHTOWER_MONITOR_HTML_STATIC_LOGGER_LEVEL=info # debug, info
+      - WATCHTOWER_MONITOR_HTML_STATIC_LOGGER_NAME=watchtower-monitor-html-static-lua # define the logger name

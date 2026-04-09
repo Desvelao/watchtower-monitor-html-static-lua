@@ -1,0 +1,77 @@
+{
+    "inputs": [
+        {
+            "type": "api",
+            "options": {
+                "url": "http://WATCHTOWER_SERVER_SITES:8080/api/items?from={wrap_ctx.item_from}&size={options.custom_values.size}",
+                "custom_values": {
+                    "size": 10
+                },
+                "json": {
+                    "items_path": "items",
+                    "total_items_path": "total_items",
+                    "item_map": {
+                        "_id": "id",
+                        "id": "name",
+                        "url": "url"
+                    }
+                }
+            }
+        }
+    ],
+    "filters": [
+        {
+            "type": "web_scraper",
+            "options": {
+                "sites": [
+                    {
+                        "url": "http://WATCHTOWER_SERVER_SITES:8080/api/scrapers/remote_config_lua/site"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "normalize_json",
+            "options": {
+                "fields": [
+                    {"field": "_id"},
+                    {"field": "id", "format": "string"},
+                    {"field": "url", "format": "string"},
+                    {"field": "price", "format": "number"},
+                    {"field": "discount"},
+                    {"field": "timestamp"},
+                    {"field": "available"}
+                ]
+            }
+        },
+        {
+            "if": "not data.price",
+            "type": "drop",
+            "options": {}
+        }
+    ],
+    "outputs": [
+        {
+            "type": "stdout",
+            "options": {
+                "template": "**Product**: {data._id}, **Price**: {data.price}, **discount**: {data.discount}, **url**: {data.url}, **available**: {data.available}"
+            }
+        },
+        {
+            "type": "file-ndjson",
+            "options": {
+                "file": "/data/monitoring.json",
+                "fields": ["timestamp", "id", "price", "available", "discount", "url"],
+                "order": ["timestamp", "id", "price", "available", "discount", "url"]
+            }
+        },
+        {
+            "type": "webhook",
+            "options": {
+                "method": "post",
+                "url": "http://WATCHTOWER_SERVER_SITES:8080/api/monitors",
+                "payload_script": "return {id = data._id, url = data.url, price = data.price, timestamp = data.timestamp, discount = data.discount, available = data.available }"
+            }
+        }        
+    ]
+}
