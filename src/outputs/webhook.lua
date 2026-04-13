@@ -8,7 +8,7 @@ webhook_url <string> define Discord webhook URL
 local requests = require("requests")
 local dkjson = require("dkjson")
 
-local function webhook(options, data, env, utils)
+local function webhook(options, event, env, utils)
 	local method = options and options.method or "post"
 	local url = options and options.url
 	local payload_script = options and options.payload_script
@@ -34,7 +34,7 @@ local function webhook(options, data, env, utils)
 	local payload = nil
 
 	if payload_script then
-		payload = utils.evaluate(payload_script, { options = options, data = data, env = env, global = _G })
+		payload = utils.evaluate(payload_script, { options = options, data = event.data, env = env, global = _G })
 	end
 
 	if payload_encoding == "json" then
@@ -46,7 +46,7 @@ local function webhook(options, data, env, utils)
 		data = payload,
 	})
 
-	return data
+	return event
 end
 
 return webhook
