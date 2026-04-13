@@ -24,7 +24,7 @@ local function main(file, options)
 	}
 
 	luastash(file, proccesors, { cache = Cache:new() }, {
-		logger = luastash.create_logger({ level = logger_level, name = logger_name }),
+		logger = luastash.Logger:new({ level = logger_level, name = logger_name }),
 	})
 end
 

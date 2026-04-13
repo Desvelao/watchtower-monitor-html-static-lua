@@ -5,7 +5,8 @@ services:
     user: "1000:1000" # run as non-root user
     volumes:
       - ./data/config.json:/watchtower-monitor-html.json
-      - ./data/monitoring.json:/data/monitoring.json # if the process pipeline define the output to file
+      # - ./data/monitoring.json:/data/monitoring.json # if the process pipeline define the output to file. Create the file if this does not exist.
     environment:
+      # - WATCHTOWER_MONITOR_HTML_STATIC_PIPELINE_CONFIG_FILE=/watchtower-monitor-html.json
       - WATCHTOWER_MONITOR_HTML_STATIC_LOGGER_LEVEL=info # debug, info
       - WATCHTOWER_MONITOR_HTML_STATIC_LOGGER_NAME=watchtower-monitor-html-static-lua # define the logger name

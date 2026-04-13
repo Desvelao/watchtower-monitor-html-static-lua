@@ -128,14 +128,14 @@ local function get_formatter(value)
 	return formatters[value] or formatters.script
 end
 
-function normalize_json(options, ctx, _, utils)
+function normalize_json(options, event, _, utils)
 	if not options.fields then
 		error("fields are not defined")
 	end
 
-	local r = select_formatted_fields(ctx, options.fields, get_formatter)
+	event.data = select_formatted_fields(event.data, options.fields, get_formatter)
 
-	return r
+	return event
 end
 
 return normalize_json

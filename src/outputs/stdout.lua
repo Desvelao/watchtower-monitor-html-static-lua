@@ -1,5 +1,5 @@
 -- Define the interpolation function
-function interpolate(template, env)
+local function interpolate(template, env)
 	-- Use the provided environment, or default to the global environment.
 	-- env = env or _G
 
@@ -29,14 +29,14 @@ function interpolate(template, env)
 	return result
 end
 
-function output_stdout(options, data)
+local function output_stdout(options, event)
 	if not options.template then
 		error("Template message was not defined.")
 	end
 
-	print(interpolate(options.template, { data = data }))
+	print(interpolate(options.template, { data = event.data }))
 
-	return data
+	return event
 end
 
 return output_stdout

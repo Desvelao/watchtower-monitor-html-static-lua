@@ -1,15 +1,8 @@
---[[
-Configuration:
-
-webhook_url <string> define Discord webhook URL
-
-]]
-
 local requests = require("requests")
 local dkjson = require("dkjson")
 
 -- Define the interpolation function
-function interpolate(template, env)
+local function interpolate(template, env)
 	-- Use the provided environment, or default to the global environment.
 	-- env = env or _G
 

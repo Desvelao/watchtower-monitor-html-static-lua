@@ -1,6 +1,4 @@
 -- parser deep limit
--- htmlparser_looplimit=8000
-
 local dkjson = require("dkjson")
 local WebScraper = require("webscraper").WebScraper
 local WebScraperFilters = require("webscraper").Filters
@@ -38,7 +36,7 @@ local function load_from_api(url)
 	return sites
 end
 
-return function(options, data, ctx, utils)
+return function(options, event, ctx, utils)
 	local webscraper
 	if ctx.cache and ctx.cache:has("scraper") then
 		webscraper = ctx.cache:get("scraper")
@@ -74,12 +72,12 @@ return function(options, data, ctx, utils)
 		error("there are not sites defined")
 	end
 
-	local extracted_data = webscraper:run(data.url)
+	local extracted_data = webscraper:run(event.data.url)
 	if extracted_data then
 		for k, v in pairs(extracted_data) do
-			data[k] = v
+			event.data[k] = v
 		end
 	end
 
-	return data
+	return event
 end

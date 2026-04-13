@@ -1,7 +1,8 @@
 local requests = require("requests")
+local take1 = require("lib.utils").take1
 
 -- Define the interpolation function
-function interpolate(template, env)
+local function interpolate(template, env)
 	-- Use the provided environment, or default to the global environment.
 	-- env = env or _G
 
@@ -50,33 +51,6 @@ local function get_nested_property(tbl, path)
 	end
 
 	return value
-end
-
-local function take1(fn, get_init)
-	return function()
-		local wrap_ctx = get_init and get_init() or nil
-		local items = {}
-		local item_returned = 0
-
-		local function return_item()
-			item_returned = item_returned + 1
-			return table.remove(items, 1)
-		end
-
-		return function(...)
-			if items ~= nil and #items > 0 then
-				return return_item()
-			end
-
-			items = fn(unpack({ ... }), wrap_ctx)
-
-			if items ~= nil and #items > 0 then
-				return return_item()
-			end
-
-			return items
-		end
-	end
 end
 
 local function ingester_api(options, wrap_ctx)

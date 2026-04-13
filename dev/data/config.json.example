@@ -1,7 +1,7 @@
 {
     "inputs": [
         {
-            "type": "api",
+            "type": "http",
             "options": {
                 "url": "http://WATCHTOWER_SERVER_SITES:8080/api/items?from={wrap_ctx.item_from}&size={options.custom_values.size}",
                 "custom_values": {

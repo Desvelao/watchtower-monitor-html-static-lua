@@ -1,15 +1,6 @@
 local csv = require("lua-csv/csv")
 local transform_rename_json = require("lib.rename_json")
-
---[[
-Configuration:
-
-file <string> define the file to load the data
-columns <{ [key:string]: number|boolean }> define the columns to extract and the formatter to use
-header? <boolean> define the usage of headers in the file
-rename <{ [key:string: string]}> rename the field
-
-]]
+local take1 = require("lib.utils").take1
 
 local map_value = {
 	number = tonumber,
@@ -19,7 +10,7 @@ local map_value = {
 	__include__ = true,
 }
 
-function input_csv(options, wrap_ctx)
+local function input_csv(options, wrap_ctx)
 	if wrap_ctx.file_read then
 		return nil
 	end
@@ -81,33 +72,6 @@ function input_csv(options, wrap_ctx)
 	end
 
 	return items
-end
-
-local function take1(fn, get_init)
-	return function()
-		local wrap_ctx = get_init and get_init() or nil
-		local items = {}
-		local item_returned = 0
-
-		local function return_item()
-			item_returned = item_returned + 1
-			return table.remove(items, 1)
-		end
-
-		return function(...)
-			if items ~= nil and #items > 0 then
-				return return_item()
-			end
-
-			items = fn(unpack({ ... }), wrap_ctx)
-
-			if items ~= nil and #items > 0 then
-				return return_item()
-			end
-
-			return items
-		end
-	end
 end
 
 return take1(input_csv, function()

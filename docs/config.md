@@ -4,14 +4,14 @@ Available filters
 
 ## Inputs
 
-### api
+### http
 
 Example using a watchtower-server:
 ```json
 {
     "inputs": [
         {
-            "type": "api",
+            "type": "http",
             "options": {
                 "url": "http://WATCHTOWER_SERVER:8080/api/items?from={wrap_ctx.item_from}&size={options.custom_values.size}",
                 "custom_values": {

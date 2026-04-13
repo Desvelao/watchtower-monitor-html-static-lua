@@ -17,7 +17,7 @@ dependencies = {
    "htmlparser == 0.3.9",
    "dkjson == 2.8-1",
    "busted == 2.2.0",
-   "luastash == 0.1.1-1",
+   "luastash == 0.2.0-1",
    "webscraper == 0.1.0",
 }
 build = {

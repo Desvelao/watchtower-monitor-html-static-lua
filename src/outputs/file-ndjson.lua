@@ -20,20 +20,20 @@ local function split(str, delimiter)
 	return result
 end
 
-function file_ndjson(options, ctx)
+local function file_ndjson(options, event)
 	local file = options and options.file
-	local final_ctx = ctx
+	local final_ctx = event.data
 	if not file then
 		error("no file defined")
 	end
 
 	if options and options.fields then
-		final_ctx = table_select_fields(ctx, options.fields)
+		final_ctx = table_select_fields(final_ctx, options.fields)
 	end
 
 	add_entry_on_file(file, dkjson.encode(final_ctx, { keyorder = options.order }))
 
-	return ctx
+	return event
 end
 
 return file_ndjson

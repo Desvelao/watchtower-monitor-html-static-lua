@@ -1,0 +1,23 @@
+name: Format Check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  stylua:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Print files in current directory
+        run: ls
+
+      - name: Setup StyLua
+        uses: JohnnyMorganz/stylua-action@v4
+        with:
+          version: latest
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --check src
