@@ -1,8 +1,7 @@
 name: Format Check
 
 on:
-  push:
-  pull_request:
+  workflow_call:
 
 jobs:
   stylua:
@@ -11,9 +10,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Print files in current directory
-        run: ls
 
       - name: Setup StyLua
         uses: JohnnyMorganz/stylua-action@v4
