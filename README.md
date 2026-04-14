@@ -11,7 +11,7 @@ Install from .rockspec:
 
 ```console
 cd src
-luarocks install --only-deps watchtower-monitor-html-static-lua-dev-1.rockspec
+luarocks install --only-deps watchtower-monitor-html-static-lua-*.rockspec
 ```
 
 # Pipeline configuration

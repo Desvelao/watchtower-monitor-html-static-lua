@@ -62,7 +62,7 @@ ADD utils /utils
 
 RUN sh /utils/setup.sh \
     && rm -rf /utils \
-    && luarocks install --only-deps /app/watchtower-monitor-html-static-lua-dev-1.rockspec
+    && luarocks install --only-deps /app/watchtower-monitor-html-static-lua-*.rockspec
 
 WORKDIR /app
 

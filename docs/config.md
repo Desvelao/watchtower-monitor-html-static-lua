@@ -237,7 +237,28 @@ Example:
 
 ## Outputs
 
-### alert-server
+### watchtower_server_alert
+
+Retrieve the alerts configuration of a watchtower server and send the notifications:
+
+Example:
+
+```json
+
+{
+    "type": "watchtower_server_alert",
+    "options": {
+        "url": "http://WATCHTOWER_SERVER:8080/api/alerts?enabled=true&item_id={event.data._id}",
+        "data_id_prop_accessor": "[_id]"
+    }
+}    
+```
+
+#### Options
+
+| Name | Description | Type | Allowd values |
+| --- | --- | --- | --- |
+| `url` | Define the URL to the server. Interpolate the `event` with `{}`. | Required | string |
 
 ### file-ndjson
 
