@@ -1,326 +1,60 @@
-# config.json
+# Configuration
 
-Available filters
+This image is a `watchtower-server` standalone worker
+(`ghcr.io/desvelao/watchtower-worker`) with the
+`watchtower_observer_web_scraper` plugin baked in. Configuration is the
+same `WORKER_CONFIG_FILE` mechanism every `watchtower-server` worker uses -
+see that project's own
+[`docs/dev/worker-configuration.md`](https://github.com/Desvelao/watchtower-server/blob/main/docs/dev/worker-configuration.md)
+for the full, generic field reference (`roles`, `plugins`, every role's own
+`interval`/`source`, the server API key resolution chain, etc.). This
+document only covers what's specific to **this** image and plugin.
 
-## Inputs
+## Enabling the plugin
 
-### http
-
-Example using a watchtower-server:
-```json
-{
-    "inputs": [
-        {
-            "type": "http",
-            "options": {
-                "url": "http://WATCHTOWER_SERVER:8080/api/items?from={wrap_ctx.item_from}&size={options.custom_values.size}",
-                "custom_values": {
-                    "size": 10
-                },
-                "json": {
-                    "items_path": "items",
-                    "total_items_path": "total_items",
-                    "item_map": {
-                        "_id": "id",
-                        "id": "name",
-                        "url": "url"
-                    }
-                }
-            }
-        }
-    ]
-}
-```
-
-#### Options
-
-| Name | Description | Type | Allowed values |
-| --- | --- | --- | --- |
-| `url` | Define the server URL where retrieve the items to monitor. | Required | string |
-| `request_options` | Define the options to be used in the fetch request (GET). See lua-request library for more details. | Optional | table |
-| `json.total_item_path` | Define the JSON path to the total items in the response. | Required | string |
-| `json.items_path` | Define the JSON path to the items list in the response. | string | Required |
-| `json.item_map` | Define a field map from the response to the process management. | Optional | table{string, string} |
-
-
-URL interpolation:
-
-| Variable | Description |
-| --- | --- |
-| `wrap_ctx.item_from` | Define the starting item to retrieve |
-| `wrap_ctx.total_items` | Define the items count to retrieve. This is used internally |
-| `options.*` | Define path to some value in the options. This allow to define some variables used in the URL using other options keys |
-
-
-### csv
-
-```json
-{
-    "file": "/data/items.csv",
-    "columns": {
-        "name": {
-            "include": true
-        },
-        "url": {
-            "include": true
-        },
-        "bool_val": "bool",
-        "number_val": {
-            "format": "number"
-        }
-    }
-}
-```
-
-#### Options
-
-| Name | Description | Type | Allowed values |
-| --- | --- | --- | --- |
-| `file` | Define the CSV file path | Required | string |
-| `header` | Define if the CSV file has the header and the properties will be the header, else define columns | Optional | boolean |
-| `columns` | Define the columns to include and format. | Optional | table{[key:string]: {include?: boolean, format[bool, number],} | string[bool, number]} |
-| `rename` | Rename headers. | Optional | table{[header_field:string]: string}} |
-
-NOTE: at least one of `header` or `columns` are required.
-
-
-## Filters
-
-### drop
-
-Drop the process of an item
-
-```json
-{
-    "filters": [
-        {
-            "if": "not item.price",
-            "type": "drop"
-        }
-    ]
-}
-```
-
-### normalize_json
-
-Format the extracted values.
-```json
-{
-    "type": "normalize_json",
-    "options": {
-        "fields": [
-            {"field": "_id"},
-            {"field": "id", "format": "string"},
-            {"field": "url", "format": "string"},
-            {"field": "price", "format": "number"},
-            {"field": "discount"},
-            {"field": "timestamp"},
-            {"field": "available"}
-        ]
-    }
-}
-```
-
-#### Options
-
-| Name | Description | Type | Allowed values |
-| --- | --- | --- | --- |
-| `fields` | List of fields to normalize | Required | string, {field: string, format?: string, format_script?: string, default: any}[] | - |
-
-
-#### Option: fields
-
-The fields can be defined:
-- string: `_id`, `name`, etc...
-- table:
-
-| Field | Description | Type |
-| --- | --- | --- |
-| `field` | Define the field path to select | Required |
-| `format` | Apply a formatter to the value: `boolean`, `number` | Optional |
-| `format_script` | Define a string to be evaluted. Interpolate: `value` (value), `ctx` (process data context), `env` (global Lua variables) | Optional |
-| `default` | Define the default value the field path does not exist | Optional |
-
-Examples:
+Already done by the image's baked-in default
+(`docker/images/prod/worker_config.default.lua`, also mirrored at
+`prod/worker_config/worker_config.example.lua` for you to copy and edit):
 
 ```lua
-{"field": "_id"}
-{"field": "name"}
-{"field": "price", format: "number"}
-{"field": "has_price_string", format_script: "if value then return 'has_value' else return 'has_no_value end'"}
-{"field": "unknown_field", "default": false}
+plugins = { "watchtower_observer_web_scraper.plugin" },
 ```
 
-The field path can select nested values using the dot notation, e.g. `a.b.c`.
+## `observer.observers` entries (`type = "web_scraper"`)
 
-### web_scraper
+| Field | Required | Description |
+| --- | --- | --- |
+| `id` | yes | This entry's own identifier - used in logs/heartbeats. |
+| `type` | yes | Always `"web_scraper"` for this plugin. |
+| `observable_type` | yes | Must match an `observable_types.name` already created on the target `watchtower-server` (e.g. `"product"`), with an `observation_schema` declaring whatever fields your `sites.*.fields` below extract. |
+| `url_property` | no (default `"url"`) | Which of the Observable's own `properties` holds the URL to scrape. |
+| `sites_source` | no (default `"local"`) | `"local"`: read `sites` below, static. `"remote"`: fetch the current site list from the server's Observer Configs feature instead (`GET /api/observer_configs/site`) - requires `remote_source = "observer_configs"` and `observable_type_id` below, and an API key with `observer_configs:read`. |
+| `remote_source` | only with `sites_source="remote"` | Always `"observer_configs"` - the only supported remote source. |
+| `observable_type_id` | only with `sites_source="remote"` | The numeric `observable_types.id` to fetch sites for. |
+| `remote_sites_refresh_interval` | no (default `60`) | Seconds between this one entry's own remote site-list refresh (`sites_source="remote"` only). |
+| `sites` | only with `sites_source="local"` | Array of `{name, urls_match, fields, urls_test?, headers?, ssl_verify?, expect_selector?, block_selector?, block_text?}` - same shape as the server's own `POST /api/observer_configs` body. |
+| `ndjson_output` | no | See below - this plugin's own addition, not part of upstream `watchtower-server`. |
 
-Example:
+## `ndjson_output`: writing observations to a local NDJSON file
 
-```json
-{
-    "type": "web_scraper",
-    "options": {
-        "sites": [
-            {
-                "url": "http://watchtower_server:8080/api/scrapers/remote_config_lua/site"
-            },
-            {
-                "name": "store1",
-                "fields": {
-                    "available": {
-                        "selector": [
-                            ".current-price-value"
-                        ],
-                        "validate": "",
-                        "transform": "to_boolean"
-                    },
-                    "discount": {
-                        "selector": [
-                            ".product-discount .regular-price"
-                        ],
-                        "validate": "",
-                        "transform": "match(\"(%d+,?%.?%d*)\") | replace(\",\",\".\") | to_number"
-                    },
-                    "price": {
-                        "selector": [
-                            ".current-price-value"
-                        ],
-                        "validate": "",
-                        "transform": "match(\"(%d+,?%.?%d*)\") | replace(\",\",\".\") | to_number"
-                    }
-                },
-                "urls_match": [
-                    "https://www%.store1"
-                ],
-            },
-            {
-                "name": "store2",
-                "fields": {
-                    "available": {
-                        "selector": [
-                            "span.a-price > span.a-offscreen"
-                        ],
-                        "validate": "",
-                        "transform": "to_boolean"
-                    },
-                    "discount": {
-                        "selector": [
-                            "span.savingPriceOverride"
-                        ],
-                        "validate": "",
-                        "transform": ""
-                    },
-                    "price": {
-                        "selector": [
-                            "span.a-price > span.a-offscreen"
-                        ],
-                        "validate": "",
-                        "transform": "replace(\",\",\".\") | match(\"(%d+%.?%d*)\") | to_number"
-                    }
-                },
-                "urls_match": [
-                    "https://store2%.com",
-                    "https://www%.store2%.com"
-                ]
-            }
-        ]
-    }
+```lua
+ndjson_output = {
+  file = "/data/observations.ndjson", -- required
+  fields = { "price", "discount", "available" }, -- optional allow-list; omitted = every extracted property
 }
 ```
 
-#### Options
-
-| Name | Description | Type | Allowed values |
-| --- | --- | --- | --- |
-| `sites` | Define a list of API to retrieve the sites | Required | Array of {url: string} | {name: string, fields: {[key: available, discount, price]: {selector: string, validate: string, transform?: string}}} | - |
-
-## Outputs
-
-### watchtower_server_alert
-
-Retrieve the alerts configuration of a watchtower server and send the notifications:
-
-Example:
+On every successful scrape, one JSON line is appended to `file`:
 
 ```json
-
-{
-    "type": "watchtower_server_alert",
-    "options": {
-        "url": "http://WATCHTOWER_SERVER:8080/api/alerts?enabled=true&item_id={event.data._id}",
-        "data_id_prop_accessor": "[_id]"
-    }
-}    
+{"observable_id":42,"observable_name":"example-product","observable_type":"product","properties":{"price":19.99,"available":true},"observed_at":"2026-09-26T10:00:00Z"}
 ```
 
-#### Options
+This happens in addition to (not instead of) the observation being posted
+to the server normally - it's a local audit trail / integration point for
+consuming the same data outside `watchtower-server`. A write failure (bad
+path, missing directory, no permissions) only logs a warning and never
+fails the observe itself. Both `dev/docker-compose.yml` and
+`prod/docker-compose.yml` mount a `data/` directory at `/data` for this.
 
-| Name | Description | Type | Allowd values |
-| --- | --- | --- | --- |
-| `url` | Define the URL to the server. Interpolate the `event` with `{}`. | Required | string |
-
-### file-ndjson
-
-Export the data to a file as ndJSON (each line is a JSON).
-
-Example:
-
-```json
-{
-    "type": "file-ndjson",
-    "options": {
-        "file": "/data/monitoring.json",
-        "fields": ["timestamp", "id", "price", "available", "discount", "url"],
-        "order": ["timestamp", "id", "price", "available", "discount", "url"]
-    }
-}
-```
-
-#### Options
-
-| Name | Description | Type | Allowd values |
-| --- | --- | --- | --- |
-| `file` | Define the path to the file. | Required | string |
-| `fields` | Define the fields to be included in the JSON. | Optional | string[] |
-| `order` | Define the order of fields in the JSON. | Optional | string[] |
-
-### stdout
-
-Send to stdout. It allows to interpolate the process context data.
-
-Example:
-
-```json
-{
-    "type": "stdout",
-    "options": {
-        "template": "**Product**: {data._id}, **Price**: {data.price}, **discount**: {data.discount}, **url**: {data.url}, **available**: {data.available}"
-    }
-}
-```
-
-#### Options
-
-| Name | Description | Type | Allowed values |
-| --- | --- | --- | --- |
-| `template` | Define the template string. Use `{}` to interpolate variables. | Required | string |
-
-#### Option: template
-
-Variables:
-- `data`: process context
-
-### webhook
-
-Send a request to a webhook.
-
-#### Options
-
-| Name | Description | Type | Allowd values |
-| --- | --- | --- | --- |
-| `method` | HTTP method | Optional: `post` | `get`, `put`, `post`, `delete`, `head` |
-| `url` | URL to send the data | Required | string |
-| `headers` | Request headers | Optional | table |
-| `payload_script` | Template that defines the payload | Required | string |
-| `payload_encoding` | Define the encoding | Optional | `json`, `nil` |
+See `src/README.md` for the full implementation notes.

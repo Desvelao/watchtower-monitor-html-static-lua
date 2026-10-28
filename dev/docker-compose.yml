@@ -1,15 +1,25 @@
 services:
-  dev:
+  worker:
     build:
       context: ..
       dockerfile: docker/images/dev/Dockerfile
     image: watchtower-monitor-html-static-lua:dev
-    container_name: watchtower-monitor-html-static-lua-dev
+    container_name: watchtower-observer-web-scraper-dev
     volumes:
-      - ../src:/app
-      - ../utils:/utils
+      # Live-edit the plugin's own source - no rebuild/publish per change,
+      # same "mount a sibling Lua lib" pattern watchtower-server's own dev
+      # stack uses for its shared/vendored libraries.
+      - ../src:/worker_plugins/watchtower_observer_web_scraper:ro
+      - ./worker_config:/etc/watchtower
       - ./data:/data
     environment:
-      - WATCHTOWER_MONITOR_HTML_STATIC_PIPELINE_CONFIG_FILE=/data/config.json
-    # Debug
+      SERVER_API_KEY: ${SERVER_API_KEY:-}
+      WORKER_CONFIG_FILE: /etc/watchtower/worker_config.lua
+      WATCHTOWER_SERVER_ADDRESS: ${WATCHTOWER_SERVER_ADDRESS:-http://watchtower-server:8080}
+    # Debug: exec in and run the worker manually while iterating, e.g.
+    #   docker compose exec worker lua /app/main.lua --once
     entrypoint: ["tail", "-f", "/dev/null"]
+    # To reach a watchtower-server running in another Compose project, either
+    # point WATCHTOWER_SERVER_ADDRESS at it or attach this service to that
+    # project's network (e.g. `docker network connect <project>_default
+    # watchtower-observer-web-scraper-dev`).

@@ -1,3 +1,1 @@
-*.csv
-*.json
-!config.json.example
+*.ndjson
